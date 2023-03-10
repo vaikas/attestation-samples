@@ -1,0 +1,50 @@
+name: Generate Attestations
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+
+permissions: read-all
+
+defaults:
+  run:
+    shell: bash
+    working-directory: ./src/github.com/sigstore/scaffolding
+
+concurrency:
+  group: fulcio-rekor-kind-${{ github.head_ref }}
+  cancel-in-progress: true
+
+jobs:
+  create-image-and-attestations:
+    name: Create
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-go@v2
+        with:
+          go-version: 1.19
+      - uses: actions/checkout@v2
+      - uses: ko-build/setup-ko@v0.6
+      - name: Create sample image
+        run: |
+          TIMESTAMP=$(date +%s)
+          pushd $(mktemp -d)
+          go mod init example.com/demo
+          cat <<EOF > main.go
+          package main
+          import "fmt"
+          func main() {
+            fmt.Println("hello world: ${TIMESTAMP}")
+          }
+          EOF
+          image=`ko publish -B example.com/demo`
+          echo "image=$image" >> $GITHUB_ENV
+          echo Created image $image
+          popd
+      - name: Sign the image
+        run: |
+          cosign sign --yes ${image}
