@@ -8,16 +8,9 @@ permissions:
   packages: write
   id-token: write
 
-permissions: read-all
-
 defaults:
   run:
     shell: bash
-    working-directory: ./src/github.com/sigstore/scaffolding
-
-concurrency:
-  group: fulcio-rekor-kind-${{ github.head_ref }}
-  cancel-in-progress: true
 
 jobs:
   create-image-and-attestations:
