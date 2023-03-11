@@ -45,6 +45,7 @@ permissions:
 defaults:
   run:
     shell: bash
+    working-directory: .
 
 jobs:
   create-image-and-attestations:
@@ -81,6 +82,8 @@ jobs:
       - name: Create SBOM with syft
         uses: anchore/sbom-action@v0
         with:
+          # Is this even right. Documentation could be clearer.
+          syft-version: 0.74.1
           output-file: ./sbom.out
           image: ${{ env.image }}
           format: ${{ inputs.sbomFormat }}
