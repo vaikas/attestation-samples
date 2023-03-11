@@ -83,7 +83,7 @@ jobs:
         uses: anchore/sbom-action@v0
         with:
           # Is this even right. Documentation could be clearer.
-          syft-version: 0.74.1
+          syft-version: v0.74.1
           output-file: ./sbom.out
           image: ${{ env.image }}
           format: ${{ inputs.sbomFormat }}
