@@ -77,16 +77,16 @@ jobs:
           popd
       - name: Sign the image
         run: |
-          cosign sign --yes ${image}
+          cosign sign --yes ${{ env.image }}
       - name: Create SBOM with syft
         uses: anchore/sbom-action@v0
         with:
           output-file: sbom.out
-          image: ${image}
+          image: ${{ env.image }}
           format: ${{ inputs.sbomFormat }}
       - name: Create an SBOM attestation
         run: |
-          cosign attest --yes --predicate sbom.out --type ${{ inputs.sbomPredicateType }} ${image}
+          cosign attest --yes --predicate sbom.out --type ${{ inputs.sbomPredicateType }} ${{ env.image }}
       - name: Scan SBOM
         id: scan
         uses: anchore/scan-action@v3
@@ -97,12 +97,12 @@ jobs:
       - name: Create vuln attestation from JSON
         if: ${{ inputs.vulnOutputFormat == 'json' }}
         run: |
-          cosign attest --yes --predicate ${{ steps.scan.outputs.json }} --type ${{ inputs.vulPredicateType }} ${image}
+          cosign attest --yes --predicate ${{ steps.scan.outputs.json }} --type ${{ inputs.vulPredicateType }} ${{ env.image }}
       - name: Create vuln attestation for Sarif
         if: ${{ inputs.vulnOutputFormat == 'sarif' }}
         run: |
-          cosign attest --yes --predicate ${{ steps.scan.outputs.sarif }} --type ${{ inputs.vulPredicateType }} ${image}
+          cosign attest --yes --predicate ${{ steps.scan.outputs.sarif }} --type ${{ inputs.vulPredicateType }} ${{ env.image }}
       - name: Dump the output
         run: |
-          echo "Image: ${image}"
+          echo "Image: ${{ env.image }}"
 
