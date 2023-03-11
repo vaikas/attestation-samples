@@ -81,15 +81,19 @@ jobs:
       - name: Create SBOM with syft
         uses: anchore/sbom-action@v0
         with:
-          output-file: sbom.out
+          output-file: ./sbom.out
           image: ${{ env.image }}
           format: ${{ inputs.sbomFormat }}
           upload-artifact: false
-          upload-release-asset: false
+          upload-release-assets: false
+      - name: dump the filesystem. Where is file
+        run: |
+          find .
+          cat ./sbom.out
       - name: Create an SBOM attestation
         run: |
           cosign attest --yes --predicate sbom.out --type ${{ inputs.sbomPredicateType }} ${{ env.image }}
-      - name: Scan SBOM
+      - name: Scan SBOM for vulnerabilities
         id: scan
         uses: anchore/scan-action@v3
         with:
