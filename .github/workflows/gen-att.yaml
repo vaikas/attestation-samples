@@ -84,6 +84,8 @@ jobs:
           output-file: sbom.out
           image: ${{ env.image }}
           format: ${{ inputs.sbomFormat }}
+          upload-artifact: false
+          upload-release-asset: false
       - name: Create an SBOM attestation
         run: |
           cosign attest --yes --predicate sbom.out --type ${{ inputs.sbomPredicateType }} ${{ env.image }}
