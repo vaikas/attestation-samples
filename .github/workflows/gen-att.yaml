@@ -1,7 +1,41 @@
-name: Generate Attestations
+name: Generate SBOM as Attestation
 
 on:
   workflow_dispatch:
+    inputs:
+      cosignVersion:
+        description: 'Cosign Version to use'
+        required: true
+        default: 'v2.0.0'
+        type: string
+      sbomFormat:
+        description: 'Which sbom format to create'
+        type: choice
+        options:
+        - spdx
+        - spdx-json
+        - cyclonedx
+        - cyclonedx-json
+      sbomPredicateType:
+        description: 'Which SBOM predicateType to use'
+        type: choice
+        options:
+        - https://cyclonedx.org/schema
+        - https://cyclonedx.org/bom
+        - https://spdx.dev/Document
+      vulnOutputFormat:
+        type: choice
+        description: 'Which vuln output format to use'
+        options:
+        - 'json'
+        - 'sarif'
+      vulnPredicate:
+        type: choice
+        description: 'Which vuln predicateType to use'
+        options:
+        - 'https://cosign.sigstore.dev/attestation/vuln/v1'
+        - 'cosign.sigstore.dev/attestation/vuln/v1'
+
 
 permissions:
   contents: read
@@ -22,6 +56,9 @@ jobs:
           go-version: 1.19
       - uses: actions/checkout@v2
       - uses: ko-build/setup-ko@v0.6
+      - uses: sigstore/cosign-installer@main
+        with:
+          cosign-release: ${{ inputs.cosignVersion }}
       - name: Create sample image
         run: |
           TIMESTAMP=$(date +%s)
@@ -41,3 +78,31 @@ jobs:
       - name: Sign the image
         run: |
           cosign sign --yes ${image}
+      - name: Create SBOM with syft
+        uses: anchore/sbom-action@v0
+        with:
+          output-file: sbom.out
+          image: ${image}
+          format: ${{ inputs.sbomFormat }}
+      - name: Create an SBOM attestation
+        run: |
+          cosign attest --yes --predicate sbom.out --type ${{ inputs.sbomPredicateType }} ${image}
+      - name: Scan SBOM
+        id: scan
+        uses: anchore/scan-action@v3
+        with:
+          sbom: sbom.out
+          severity-cutoff: negligible
+          output-format: ${{ inputs.vulnOutputFormat }}
+      - name: Create vuln attestation from JSON
+        if: ${{ inputs.vulnOutputFormat == 'json' }}
+        run: |
+          cosign attest --yes --predicate ${{ steps.scan.outputs.json }} --type ${{ inputs.vulPredicateType }} ${image}
+      - name: Create vuln attestation for Sarif
+        if: ${{ inputs.vulnOutputFormat == 'sarif' }}
+        run: |
+          cosign attest --yes --predicate ${{ steps.scan.outputs.sarif }} --type ${{ inputs.vulPredicateType }} ${image}
+      - name: Dump the output
+        run: |
+          echo "Image: ${image}"
+
