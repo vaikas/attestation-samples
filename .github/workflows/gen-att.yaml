@@ -103,4 +103,9 @@ jobs:
       - name: Dump the output
         run: |
           echo "Image: ${{ env.image }}"
+          echo "Cosign Version: ${{ inputs.cosignVersion }}"
+          echo "sbomFormat: ${{ inputs.sbomFormat }}"
+          echo "sbomPredicateType: ${{ inputs.sbomPredicateType }}"
+          echo "vulnOutputFormat: ${{ inputs.vulnOutputFormat }}"
+          echo "vulnPredicateType: ${{ inputs.vulnPredicateType }}"
 
