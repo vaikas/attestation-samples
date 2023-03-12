@@ -29,7 +29,7 @@ on:
         options:
         - 'json'
         - 'sarif'
-      vulnPredicate:
+      vulnPredicateType:
         type: choice
         description: 'Which vuln predicateType to use'
         options:
@@ -79,45 +79,27 @@ jobs:
       - name: Sign the image
         run: |
           cosign sign --yes ${{ env.image }}
-      - name: Install syft and see if it works better than action
+
+      - name: Install syft
         run: |
           curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
-
       - name: Create SBOM with syft
         run: |
           syft -o ${{ inputs.sbomFormat }} ${{ env.image }} --file ./sbom.out
-      #- name: Create SBOM with syft
-      #  uses: anchore/sbom-action@v0
-      #  with:
-      #    # Is this even right. Documentation could be clearer.
-      #    syft-version: v0.74.1
-      #    output-file: ./sbom.out
-      #    image: ${{ env.image }}
-      #    format: ${{ inputs.sbomFormat }}
-      #    upload-artifact: false
-      #    upload-release-assets: false
-      - name: dump the filesystem. Where is file
-        run: |
-          find .
-          cat ./sbom.out
       - name: Create an SBOM attestation
         run: |
           cosign attest --yes --predicate sbom.out --type ${{ inputs.sbomPredicateType }} ${{ env.image }}
-      - name: Scan SBOM for vulnerabilities
-        id: scan
-        uses: anchore/scan-action@v3
-        with:
-          sbom: sbom.out
-          severity-cutoff: negligible
-          output-format: ${{ inputs.vulnOutputFormat }}
-      - name: Create vuln attestation from JSON
-        if: ${{ inputs.vulnOutputFormat == 'json' }}
+
+      - name: Install grype
         run: |
-          cosign attest --yes --predicate ${{ steps.scan.outputs.json }} --type ${{ inputs.vulPredicateType }} ${{ env.image }}
-      - name: Create vuln attestation for Sarif
-        if: ${{ inputs.vulnOutputFormat == 'sarif' }}
+          curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin
+      - name: Scan SBOM for vulnerabilities with grype
         run: |
-          cosign attest --yes --predicate ${{ steps.scan.outputs.sarif }} --type ${{ inputs.vulPredicateType }} ${{ env.image }}
+          cat ./sbom.out | grype --output ${{ inputs.vulnOutputFormat }} --add-cpes-if-none --file ./vuln.out
+      - name: Create vuln attestation from json
+        run: |
+          cosign attest --yes --predicate ./vuln.out --type ${{ inputs.vulnPredicateType }} ${{ env.image }}
+
       - name: Dump the output
         run: |
           echo "Image: ${{ env.image }}"
