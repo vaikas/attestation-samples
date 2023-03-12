@@ -60,15 +60,6 @@ jobs:
       - uses: sigstore/cosign-installer@main
         with:
           cosign-release: ${{ inputs.cosignVersion }}
-      - name: debug step1
-        run: |
-          echo 'HELLO THERE' > ./foo
-      - name: debug step2
-        run: |
-          echo 'HELLO THERE2' >> ./foo
-      - name: debug step3
-        run: |
-          cat ./foo
       - name: Create sample image
         run: |
           TIMESTAMP=$(date +%s)
@@ -88,16 +79,23 @@ jobs:
       - name: Sign the image
         run: |
           cosign sign --yes ${{ env.image }}
+      - name: Install syft and see if it works better than action
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+
       - name: Create SBOM with syft
-        uses: anchore/sbom-action@v0
-        with:
-          # Is this even right. Documentation could be clearer.
-          syft-version: v0.74.1
-          output-file: ./sbom.out
-          image: ${{ env.image }}
-          format: ${{ inputs.sbomFormat }}
-          upload-artifact: false
-          upload-release-assets: false
+        run: |
+          syft -o ${{ inputs.sbomFormat }} ${{ env.image }} --file ./sbom.out
+      #- name: Create SBOM with syft
+      #  uses: anchore/sbom-action@v0
+      #  with:
+      #    # Is this even right. Documentation could be clearer.
+      #    syft-version: v0.74.1
+      #    output-file: ./sbom.out
+      #    image: ${{ env.image }}
+      #    format: ${{ inputs.sbomFormat }}
+      #    upload-artifact: false
+      #    upload-release-assets: false
       - name: dump the filesystem. Where is file
         run: |
           find .
