@@ -60,6 +60,15 @@ jobs:
       - uses: sigstore/cosign-installer@main
         with:
           cosign-release: ${{ inputs.cosignVersion }}
+      - name: debug step1
+        run: |
+          echo 'HELLO THERE' > ./foo
+      - name: debug step2
+        run: |
+          echo 'HELLO THERE2' >> ./foo
+      - name: debug step3
+        run: |
+          cat ./foo
       - name: Create sample image
         run: |
           TIMESTAMP=$(date +%s)
