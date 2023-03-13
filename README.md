@@ -39,3 +39,14 @@ created with the short vs. full predicateType was fixed. Before this, if you
 created with the short type, the predicateType was correct, but the actual
 predicate had an extra wrapper in it.
 
+# Public images
+
+ghcr.io/vaikas/attestation-samples/demo@sha256:cc0b27b2b24a0d5f9bc40ef0549155aec896940b85afe4af901e6be814fc0ca5
+
+| Option      | Value |
+| ----------- | ----------- |
+| cosignVersion | v2.0.0 |
+| sbomFormat | spdx-json |
+| sbomPredicateType | https://spdx.dev/Document |
+| vulnOutputFormat | json |
+| vulnPredicateType | https://cosign.sigstore.dev/attestation/vuln/v1|
